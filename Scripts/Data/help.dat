@@ -1,0 +1,20 @@
+Music Menu Documentation
+
+Note on playlists. All playlists are saved using the m3u standard and use UTF-8 encoding, so when saving a playlist in
+an external program like foobar2000, make sure to save using the m3u8 format.
+
+[Change Music Directory] is a bit tricky at first. It selects a folder to use for a selected genre.
+
+Try using this method:
+
+Select [Playlist Options] > [Default Music Directory] > [Menu] > [Cancel] > Bring the menu back up >
+[Change Music Directory] > Select a folder > [Use This Directory] > Select a genre and done
+
+[Default Music Directory] is where you keep your default music. Currently tied to your Music folder under your
+windows profile. You can browse using the [Custom Music Directory] or from your current location selecting [Back] or
+[Up One Directory]. You can also click on folder names without the mp3 extension. Clicking on a file with the mp3
+extension will append that file to the temp playlist in memory.
+
+[Custom Music Directory] is stored in music.dat. It can be any directory on your computer.
+
+All playlists are loaded and stored in memory until you save or build them.
