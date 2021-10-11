@@ -109,7 +109,10 @@ class MusicJobs(ImmediateSuperInteraction):
                         MusicJobs.remove_sim = None
 
                 behavior = ListenMusicBehavior.LISTEN
-                dist = self.distance_to(sim, self.target)
+                if "earbuds" in str(self.target).lower():
+                    dist = 0
+                else:
+                    dist = self.distance_to(sim, self.target)
                 obj_room_id = build_buy.get_room_id(self.target.zone_id, self.target.position, self.target.level)
                 sim_room_id = build_buy.get_room_id(sim.zone_id, sim.position, sim.level)
                 interactions = sim.get_all_running_and_queued_interactions()
@@ -117,9 +120,10 @@ class MusicJobs(ImmediateSuperInteraction):
                 # check if custom radio sound is active
                 if self.target is not None:
                     if hasattr(self.target, "primitives"):
-                        if "sound" not in str(self.target.primitives).lower():
-                            self.remove_listen_alarm()
-                            return
+                        if hasattr(sim, "primitives"):
+                            if "sound" not in str(self.target.primitives).lower() and "sound" not in str(sim.primitives).lower():
+                                self.remove_listen_alarm()
+                                return
 
                 for action in interactions:
                     action_title = action.__class__.__name__.lower()

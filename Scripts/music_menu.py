@@ -1,8 +1,10 @@
 import os
 import random
 import re
+import sims4
 from os.path import isfile, join
 
+import build_buy
 import services
 from distributor.shared_messages import IconInfoData
 from interactions.base.immediate_interaction import ImmediateSuperInteraction
@@ -10,7 +12,7 @@ from interactions.interaction_finisher import FinishingType
 from music_alarms import MusicAlarms
 from music_input import dialogtest_input
 from music_menu_class import MainMenu
-from music_util import error_trap, ld_notice, ld_file_loader
+from music_util import error_trap, ld_notice, ld_file_loader, clean_string
 from objects.object_enums import ResetReason
 from sims4.localization import LocalizationHelperTuning
 from ui.ui_dialog_notification import UiDialogNotification
@@ -37,7 +39,8 @@ class MusicMenu(ImmediateSuperInteraction):
                                    "Dance",
                                    "Tape Deck")
 
-        self.music_options_choices = ("Change Music Directory",
+        self.music_options_choices = ("Object Info",
+                                        "Change Music Directory",
                                         "Playlist Options",
                                         "Audio States",
                                         "Skip Track",
@@ -81,6 +84,67 @@ class MusicMenu(ImmediateSuperInteraction):
     def playlist_options(self, timeline):
         self.playlist_menu.show(timeline, self, 0, self.playlist_choices, "Playlist\n{}\nPlaylist has {} entries."
                                 .format(MusicMenu.datapath, len(MusicMenu.playlist)), "Make a selection.")
+
+    def object_info(self, timeline):
+        try:
+            zone_id = services.current_zone_id()
+            persistence_service = services.get_persistence_service()
+            zone_data = persistence_service.get_zone_proto_buff(zone_id)
+            object_tuning = services.definition_manager().get(self.target.definition.id)
+            object_class = clean_string(str(object_tuning._cls))
+
+            output = ""
+            result = self.target
+            for att in dir(result):
+                if hasattr(result, att):
+                    output = output + "\n(" + str(att) + "): " + clean_string(str(getattr(result, att)))
+
+            obj_room_id = build_buy.get_room_id(zone_id, self.target.position, self.target.level)
+
+            if hasattr(self.target, "scale"):
+                scale = self.target.scale
+            else:
+                scale = 1
+
+            info_string = "Zone Info: {}\n" \
+                        "Object ID: {}\n" \
+                        "Object Definition ID: {}\n" \
+                        "Object Scale :{}\n" \
+                        "Object Room ID:{}\n" \
+                        "Object Level:{}\n" \
+                        "Type: {}\n" \
+                        .format(zone_id,
+                        self.target.id,
+                        self.target.definition.id,
+                        scale,
+                        obj_room_id,
+                        self.target.level,
+                        object_class)
+
+            urgency = UiDialogNotification.UiDialogNotificationUrgency.DEFAULT
+            information_level = UiDialogNotification.UiDialogNotificationLevel.PLAYER
+            visual_type = UiDialogNotification.UiDialogNotificationVisualType.INFORMATION
+            localized_text = lambda **_: LocalizationHelperTuning.get_raw_text(info_string)
+            localized_title = lambda **_: LocalizationHelperTuning.get_object_name(self.target)
+            notification = UiDialogNotification.TunableFactory().default(None,
+                                                                         text=localized_text,
+                                                                         title=localized_title,
+                                                                         icon=None,
+                                                                         secondary_icon=None,
+                                                                         urgency=urgency,
+                                                                         information_level=information_level,
+                                                                         visual_type=visual_type,
+                                                                         expand_behavior=1)
+            notification.show_dialog()
+
+            datapath = os.path.abspath(os.path.dirname(__file__))
+            filename = datapath + r"\{}.log".format("object_info")
+            file = open(filename, "w")
+            file.write("{}\n{}\n\nINFO:\n{}".format(self.target.__class__.__name__, info_string, output))
+            file.close()
+
+        except BaseException as e:
+            error_trap(e)
 
     def headbang(self, timeline):
         self.music_alarm.push_sim_function(self.sim, self.sim, 240309)
