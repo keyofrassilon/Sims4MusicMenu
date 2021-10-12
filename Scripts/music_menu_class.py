@@ -1,3 +1,6 @@
+import math
+import re
+
 import objects
 import services
 from music_dialog import display_choices
@@ -35,8 +38,13 @@ class MainMenu(ImmediateSuperInteraction):
     def options(self, timeline, className, index: int, menu_choices):
         try:
             result = menu_choices[index].replace(" ", "_")
+            clean = re.compile('<.*?>')
+            result = re.sub(clean, '', result)
+            result = result.replace("[", "_")
+            result = result.replace("]", "")
             result = result.replace("*", "_")
             result = result.lower()
+            result = re.sub(r'\W+', '', result)
             method = getattr(className, result)
             if method is not None:
                 method(timeline)
@@ -67,7 +75,7 @@ class MainMenu(ImmediateSuperInteraction):
                     self.main_index = index
                     for choice in this_menu_items:
                         if result == choice and not show_files:
-                            self.options(timeline, className, count + index, menu_choices)
+                            self.options(timeline, className, count + index, this_menu_items)
                         elif result == choice and show_files is True:
                             self.files(timeline, className, funcName, result)
                         count = count + 1
@@ -95,8 +103,8 @@ class MainMenu(ImmediateSuperInteraction):
             for c in self.commands:
                 this_menu_items.append(c)
             page = int((index+1)/self.MAX_MENU_ITEMS_TO_LIST+1)
-            if len(menu_choices) >= self.MAX_MENU_ITEMS_TO_LIST:
-                max_pages = int(len(menu_choices) / self.MAX_MENU_ITEMS_TO_LIST) + 1
+            if len(menu_choices) > self.MAX_MENU_ITEMS_TO_LIST:
+                max_pages = int(math.ceil(len(menu_choices) / self.MAX_MENU_ITEMS_TO_LIST))
             else:
                 max_pages = 1
             display_choices(this_menu_items, handle_result, text=text + "\nPage {} of {}".format(page, max_pages), title=title)

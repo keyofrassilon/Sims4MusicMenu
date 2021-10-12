@@ -78,10 +78,21 @@ class MusicMenu(ImmediateSuperInteraction):
     def _run_interaction_gen(self, timeline):
         self.music_options.show(timeline, self, 0, self.music_options_choices, "Music Menu", "Make a selection.")
 
+    def _menu(self, timeline):
+        self.music_options.show(timeline, self, 0, self.music_options_choices, "Music Menu", "Make a selection.")
+
     def audio_states(self, timeline):
+        self.music_volume.MAX_MENU_ITEMS_TO_LIST = 10
+        self.music_volume.commands = []
+        self.music_volume.commands.append("<font color='#990000'>[Menu]</font>")
+
         self.music_volume.show(timeline, self, 0, self.music_volume_choices, "Volume", "Make a selection.")
 
     def playlist_options(self, timeline):
+        self.playlist_menu.MAX_MENU_ITEMS_TO_LIST = 10
+        self.playlist_menu.commands = []
+        self.playlist_menu.commands.append("<font color='#990000'>[Menu]</font>")
+
         self.playlist_menu.show(timeline, self, 0, self.playlist_choices, "Playlist\n{}\nPlaylist has {} entries."
                                 .format(MusicMenu.datapath, len(MusicMenu.playlist)), "Make a selection.")
 
@@ -436,8 +447,8 @@ class MusicMenu(ImmediateSuperInteraction):
     def music_playlist(self, filename=""):
         try:
 
-            filename = filename.replace("<font color='#990000'>", "")
-            filename = filename.replace("</font>", "")
+            clean = re.compile('<.*?>')
+            filename = re.sub(clean, '', filename)
 
             if "[Menu]" in filename:
                 self.playlist_options(None)
@@ -535,6 +546,7 @@ class MusicMenu(ImmediateSuperInteraction):
             self.music_choice.commands.append("<font color='#990000'>[Default Music Directory]</font>")
             self.music_choice.commands.append("<font color='#990000'>[Custom Music Directory]</font>")
             self.music_choice.commands.append("<font color='#990000'>[Up One Directory]</font>")
+            self.music_choice.commands.append("<font color='#990000'>[Use This Directory]</font>")
 
             if len(files) > 0:
                 self.music_choice.show(timeline, self, 0, files, "Music Menu\n{}".format(MusicMenu.datapath),
@@ -550,8 +562,8 @@ class MusicMenu(ImmediateSuperInteraction):
 
     def music_directory(self, filename=""):
         try:
-            filename = filename.replace("<font color='#990000'>", "")
-            filename = filename.replace("</font>", "")
+            clean = re.compile('<.*?>')
+            filename = re.sub(clean, '', filename)
 
             if "[Menu]" in filename:
                 self._run_interaction_gen(None)
