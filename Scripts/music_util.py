@@ -30,13 +30,11 @@ string_filter = ("Active",
 
 
 @sims4.commands.Command('music.load', command_type=sims4.commands.CommandType.Live)
-def ld_file_loader(module: str, _connection=None):
-    dirname = os.path.dirname(os.path.realpath(__file__))
+def ld_file_loader(dirname: str, module: str, _connection=None):
     filetitle = module
     if filetitle == "all":
         try:
-            datapath = os.path.abspath(os.path.dirname(__file__))
-            file_list = [f for f in os.listdir(datapath) if isfile(join(datapath, f))]
+            file_list = [f for f in os.listdir(dirname) if isfile(join(dirname, f))]
             list = ""
             for file in file_list:
                 if ".py" in file:

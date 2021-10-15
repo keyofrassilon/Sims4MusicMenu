@@ -27,6 +27,8 @@ class MusicMenu(ImmediateSuperInteraction):
     append = False
     index = 0
     MAX_PLAYLIST = 25
+    directory = None
+
     def __init__(self, *args, **kwargs):
         (super().__init__)(*args, **kwargs)
         self.music_menu_choices = ("Heavy Metal",
@@ -285,22 +287,28 @@ class MusicMenu(ImmediateSuperInteraction):
         datapath = os.path.abspath(os.path.dirname(__file__))
         if append:
             filename = datapath + r"\Playlists\{}.m3u".format(filename)
-            file = open(filename, "a")
+            file = open(filename, 'a', errors='ignore', encoding='utf-8-sig')
             for playlist in MusicMenu.playlist:
-                file.write(playlist + "\n")
+                if os.path.exists(playlist):
+                    file.write(playlist + "\n")
         elif load:
             filename = datapath + r"\Playlists\{}".format(filename)
-            file = open(filename, 'r', errors='ignore')
+            if "m3u8" in filename:
+                encode = 'utf-8-sig'
+            else:
+                encode = 'latin-1'
+            file = open(filename, 'r', errors='ignore', encoding=encode)
             lines = file.readlines()
             for line in lines:
                 line = line.strip('\n')
-                if len(line) > 0:
+                if len(line) > 0 and os.path.exists(line):
                     MusicMenu.playlist.append(line)
         else:
             filename = datapath + r"\Playlists\{}.m3u".format(filename)
-            file = open(filename, "w")
+            file = open(filename, 'w', errors='ignore', encoding='utf-8-sig')
             for playlist in MusicMenu.playlist:
-                file.write(playlist + "\n")
+                if os.path.exists(playlist):
+                    file.write(playlist + "\n")
         file.close()
 
     def load_playlist(self, timeline):
@@ -550,7 +558,7 @@ class MusicMenu(ImmediateSuperInteraction):
 
             if len(files) > 0:
                 self.music_choice.show(timeline, self, 0, files, "Music Menu\n{}".format(MusicMenu.datapath),
-                                       "Choose a folder to associate with a genre", "music_directory", True)
+                                       "Choose a folder to associate with a genre", "music_directory", True, True)
             else:
                 ld_notice(None, "Music Menu",
                           "No music found! You need to fill your music folder under your user profile with folders "
@@ -576,7 +584,7 @@ class MusicMenu(ImmediateSuperInteraction):
             elif "[Up One Directory]" in filename and len(MusicMenu.datapath) == 3 and ":" in MusicMenu.datapath:
                 files = re.findall(r"[A-Z]+:.*$", os.popen("mountvol /").read(), re.MULTILINE)
                 MusicMenu.datapath = ""
-            elif "[Up One Directory]" in filename:
+            elif "[Up One Directory]" in filename or "[Back]" in filename:
                 parent = os.path.dirname(MusicMenu.datapath)
                 MusicMenu.datapath = parent
                 files = [f for f in os.listdir(MusicMenu.datapath) if os.path.isdir(join(MusicMenu.datapath, f)) or ".mp3" in f.lower()]
@@ -602,9 +610,9 @@ class MusicMenu(ImmediateSuperInteraction):
             self.music_choice.commands.append("<font color='#990000'>[Up One Directory]</font>")
             self.music_choice.commands.append("<font color='#990000'>[Use This Directory]</font>")
 
-            if len(files) > 0:
-                self.music_choice.show(None, self, 0, files, "Music Menu\n{}".format(MusicMenu.datapath),
-                                       "Choose a folder to associate with a genre", "music_directory", True)
+            self.music_choice.show(None, self, 0, files, "Music Menu\n{}".format(MusicMenu.datapath),
+                                       "Choose a folder to associate with a genre", "music_directory", True, True)
+
         except BaseException as e:
             error_trap(e)
 
@@ -848,23 +856,26 @@ class MusicMenu(ImmediateSuperInteraction):
 
     def reload_scripts(self, timeline):
         dialogtest_input("Reload Script",
-                         "Type in name of script or leave blank to list all", self._reload_script_callback)
+                         "Type in directory to browse or leave blank to list all in current directory", self._reload_script_callback)
 
-    def _reload_script_callback(self, script_file: str):
+    def _reload_script_callback(self, script_dir: str):
         try:
-            datapath = os.path.abspath(os.path.dirname(__file__))
-            if script_file == "":
-                files = [f for f in os.listdir(datapath) if isfile(join(datapath, f))]
-                files.insert(0, "all")
-                self.script_choice.show(None, self, 0, files, "Reload Script",
-                                        "Choose a script to reload", "_reload_script_final", True)
+            if script_dir == "" or script_dir is None:
+                MusicMenu.directory = os.path.abspath(os.path.dirname(__file__))
+                files = [f for f in os.listdir(MusicMenu.directory) if isfile(join(MusicMenu.directory, f))]
             else:
-                ld_file_loader(script_file)
+                MusicMenu.directory = script_dir
+                files = [f for f in os.listdir(script_dir) if isfile(join(script_dir, f))]
+            files.insert(0, "all")
+            self.script_choice.show(None, self, 0, files, "Reload Script",
+                                       "Choose a script to reload", "_reload_script_final", True)
         except BaseException as e:
             error_trap(e)
 
     def _reload_script_final(self, filename: str):
         try:
-            ld_file_loader(filename)
+            if MusicMenu.directory is None:
+                MusicMenu.directory = os.path.abspath(os.path.dirname(__file__))
+            ld_file_loader(MusicMenu.directory, filename)
         except BaseException as e:
             error_trap(e)
